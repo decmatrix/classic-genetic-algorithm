@@ -3,4 +3,4 @@
 ## Description
 Classic genetic algorithm in Common Lisp
 
-## Demostration
+## Demonstration
