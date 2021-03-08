@@ -1,2 +1,6 @@
-# classic-genetic-algorithm
+# Classic-genetic-algorithm
+
+## Description
 Classic genetic algorithm in Common Lisp
+
+## Demostration
