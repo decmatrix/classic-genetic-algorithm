@@ -31,7 +31,7 @@
 (defmethod print-object ((obj chromosome) stream)
   (print-unreadable-object
       (obj stream)
-    (format stream "chromosome: phenotype - ~a, genes - ~{~a~^,~}"
+    (format stream "chromosome: phenotype - ~a, genes - ~{~a~^ ~}"
             (get-phenotype obj)
             (get-genes obj))))
 
@@ -58,8 +58,8 @@
                                          x-min
                                          x-max
                                          (digit-capacity 16)
-                                         (count-of-genes 4)
-                                         (count-of-iterations 5000))
+                                         (count-of-genes 2)
+                                         (count-of-iterations 10))
   (let* ((*count-of-elits* count-of-elits)
          (*count-of-tournament-chs* (- size-of-population
                                        *count-of-elits*))
@@ -105,43 +105,39 @@
    (loop :repeat *count-of-tournament-chs*
       :collect (crossover-swap
                 (get-genes
-                 (nth (random *count-of-genes*)
+                 (nth (random *count-of-tournament-chs*)
                       population))
                 (get-genes
-                 (nth (random *count-of-genes*)
+                 (nth (random *count-of-tournament-chs*)
                       population))))))
 
 (defun crossover-swap (genes-of-ch1 genes-of-ch2)
   (let* ((random-gen-1 (nth (random (length genes-of-ch1))
                             genes-of-ch1))
          (random-gen-2 (nth (random (length genes-of-ch2))
-                            genes-of-ch2))
-         (res (mapcar
-               (lambda (gen-of-ch1 gen-of-ch2)
-                 (if (or (equalp gen-of-ch1 random-gen-1)
-                         (equalp gen-of-ch2 random-gen-2))
-                     (let ((bit-str-1 (coerce gen-of-ch1 'list))
-                           (bit-str-2 (coerce gen-of-ch2 'list)))
-                       (list
-                        (coerce (append
-                                 (subseq bit-str-2 0 2)
-                                 (subseq bit-str-1 3))
-                                'bit-vector)
-                        (coerce (append
-                                 (subseq bit-str-1 0 2)
-                                 (subseq bit-str-2 3))
-                                'bit-vector)))
-                     (list gen-of-ch2 gen-of-ch1)))
-               genes-of-ch1
-               genes-of-ch2)))
-    (list
-     (make-instance
-      'chromosome
-      :genes (mapcar #'first res))
-     ;; (make-instance
-     ;;  'chromosome
-     ;;  :genes (mapcar #'second res))
-     )))
+                            genes-of-ch2)))
+    (make-instance
+     'chromosome
+     :genes (mapcar
+             (lambda (gen-of-ch1 gen-of-ch2)
+               (if (or (equalp gen-of-ch1 random-gen-1)
+                       (equalp gen-of-ch2 random-gen-2))
+                   (let ((bit-str-1 (coerce gen-of-ch1 'list))
+                         (bit-str-2 (coerce gen-of-ch2 'list)))
+                     (if (eql 1 (random 2))
+                         (coerce (append
+                                  (subseq bit-str-2 0 2)
+                                  (subseq bit-str-1 3))
+                                 'bit-vector)
+                         (coerce (append
+                                  (subseq bit-str-1 0 2)
+                                  (subseq bit-str-2 3))
+                                 'bit-vector)))
+                   (if (eql 1 (random 2))
+                       gen-of-ch2
+                       gen-of-ch1)))
+             genes-of-ch1
+             genes-of-ch2))))
 
 ;; selections and mutations
 (defun selection-and-mutation (population)

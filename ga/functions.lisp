@@ -20,11 +20,11 @@
   (+ (- (* -20
            (exp (* -0.2
                    (sqrt
-                    (/ (loop :for i :to (length x-lst)
+                    (/ (loop :for i :from 0 :to (1- (length x-lst))
                           :summing (expt (nth i x-lst)
                                          2))
                        (length x-lst))))))
-        (exp (/ (loop :for i :to (length x-lst)
+        (exp (/ (loop :for i :from 0 :to (1- (length x-lst))
                    :summing (cos (* 2
                                     pi
                                     (nth i x-lst))))
@@ -35,11 +35,11 @@
 ;; GRIEWANK FUNCTION
 (defun griewank-fn (x-lst)
   (1+
-   (- (/ (loop :for i :to (length x-lst)
+   (- (/ (loop :for i :from 0 :to (1- (length x-lst))
             :summing (expt (nth i x-lst)
                            2))
          4000)
-      (loop :for i :to (length x-lst)
+      (loop :for i :from 0 :to (1- (length x-lst))
          :and j = 1 :then (1+ j)
          :for res = 1
          :then (* res
@@ -50,7 +50,7 @@
 (defun rastrigin-fn (x-lst)
   (+ (* 10
         (length x-lst))
-     (loop :for i :to (length x-lst)
+     (loop :for i :from 0 :to (1- (length x-lst))
         :summing (- (expt (nth i x-lst)
                           2)
                     (* 10
@@ -60,7 +60,7 @@
 
 ;; ROSENBROCK FUNCTION
 (defun rosenbrock-fn (x-lst)
-  (loop :for i :to (length x-lst)
+  (loop :for i :from 1 :to (1- (length x-lst))
      :summing (+ (* 100
                     (expt (- (nth i x-lst)
                              (expt (nth (1- i) x-lst)

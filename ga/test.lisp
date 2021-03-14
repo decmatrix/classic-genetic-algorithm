@@ -13,11 +13,16 @@
 (in-package :ga/test)
 
 (defun run-all ()
-  (test-sphere-fn)
-  (test-ackly-fn)
-  (test-griewank-fn)
-  (test-rastrigin-fn)
-  (test-rosenbrock-fn))
+  (format t "Sphere fn: ~a~%"
+          (test-sphere-fn))
+  (format t "Ackly fn: ~a~%"
+          (test-ackly-fn))
+  (format t "Griewank fn: ~a~%"
+          (test-griewank-fn))
+  (format t "Rastrigin fn: ~a~%"
+          (test-rastrigin-fn))
+  (format t "Rosenbrock fn: ~a~%"
+          (test-rosenbrock-fn)))
 
 (defun test-sphere-fn ()
   (search-extremum-of-function
