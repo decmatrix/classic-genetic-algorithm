@@ -4,7 +4,7 @@
   (:import-from :alexandria
                 #:flatten)
   (:nicknames :ga)
-  (:exports #:search-extremum-of-function))
+  (:export #:search-extremum-of-function))
 
 (in-package :ga/ga-impl)
 
@@ -58,18 +58,19 @@
                                          x-max
                                          (digit-capacity 16)
                                          (count-of-genes 4)
-                                         (count-of-iteration 5))
+                                         (count-of-iterations 5))
   (let* ((*count-of-elits* count-of-elits)
-         (*count-of-tournament-chs* (- count-of-pupulation
+         (*count-of-tournament-chs* (- size-of-population
                                        *count-of-elits*))
+         (*count-of-genes* count-of-genes)
          (*fn* fn)
          (*x-min* x-min)
          (*x-max* x-max)
          (*digit-capacity* digit-capacity))
     (sort-population
      (loop :repeat count-of-iterations
-        :for new-population (calculate-phenotypes
-                             (generate-population size-of-population))
+        :for new-population = (calculate-phenotypes
+                               (generate-population size-of-population))
         :then (progn
                 (calculate-phenotypes new-population)
                 (sort-population new-population))
@@ -84,14 +85,15 @@
 (defun calculate-phenotypes (population)
   (mapc
    (lambda (ch)
-     (setf (set-phenotype ch)
-           (funcall *fn*
-                    (mapcar #'bin-str->float-number
-                            (get-genes ch)))))
+     (set-phenotype
+      (funcall *fn*
+               (mapcar #'bin-str->float-number
+                       (get-genes ch)))
+      ch))
    population))
 
 (defun sort-population (population)
-  (sort :test #'< :key #'get-phenotype))
+  (sort population #'< :key #'get-phenotype))
 
 (defun init-population (n)
   (loop :repeat n :collect (generate-chromosome)))
@@ -102,42 +104,42 @@
    (loop :repeat *count-of-tournament-chs*
       :collect (crossover-swap
                 (get-genes
-                 (nth (radnom *count-of-genes*)
+                 (nth (random *count-of-genes*)
                       population))
                 (get-genes
                  (nth (random *count-of-genes*)
                       population))))))
 
 (defun crossover-swap (genes-of-ch1 genes-of-ch2)
-  (let ((random-gen-1 (nth (random (length genes-of-ch1))
-                           genes-of-ch1))
-        (random-gen-2 (nth (random (length genes-of-ch2))
-                           genes-of-ch2))
-        (res (mapcar
-              (lambda (gen-of-ch1 gen-of-ch2)
-                (if (or (equal gen-of-ch1 random-gen-1)
-                        (equal gen-of-ch2 random-gen-2))
-                    (let ((bit-str-1 (str->list gen-of-ch1))
-                          (bit-str-2 (str->list gen-of-ch2)))
-                      (list
-                       (coerce 'string
-                               (append
-                                (subseq bit-str-2 0 2)
-                                (subseq bit-str-1 3)))
-                       (coerce 'string
-                               (append
-                                (subseq bit-str-1 0 2)
-                                (subseq bit-str-2 3)))))
-                    (list gen-of-ch2 geb-of-ch1)))
-              genes-of-ch1
-              genes-of-ch2))
-        (list
-         (make-instance
-          'chromosome
-          :genes (mapcar #'first res))
-          (make-instance
-           'chromosome
-           :genes (mapcar #'second res))))))
+  (let* ((random-gen-1 (nth (random (length genes-of-ch1))
+                            genes-of-ch1))
+         (random-gen-2 (nth (random (length genes-of-ch2))
+                            genes-of-ch2))
+         (res (mapcar
+               (lambda (gen-of-ch1 gen-of-ch2)
+                 (if (or (equal gen-of-ch1 random-gen-1)
+                         (equal gen-of-ch2 random-gen-2))
+                     (let ((bit-str-1 (str->list gen-of-ch1))
+                           (bit-str-2 (str->list gen-of-ch2)))
+                       (list
+                        (coerce 'string
+                                (append
+                                 (subseq bit-str-2 0 2)
+                                 (subseq bit-str-1 3)))
+                        (coerce 'string
+                                (append
+                                 (subseq bit-str-1 0 2)
+                                 (subseq bit-str-2 3)))))
+                     (list gen-of-ch2 gen-of-ch1)))
+               genes-of-ch1
+               genes-of-ch2)))
+    (list
+     (make-instance
+      'chromosome
+      :genes (mapcar #'first res))
+     (make-instance
+      'chromosome
+      :genes (mapcar #'second res)))))
 
 ;; selections and mutations
 (defun selection-and-mutation (population)
@@ -178,7 +180,7 @@
    100))
 
 (defun bits-mutation (bit-str)
-  (let ((mutation-prob calculate-mutation-probability))
+  (let ((mutation-prob (calculate-mutation-probability)))
     (coerce
      'string
      (mapcar

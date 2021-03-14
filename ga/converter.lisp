@@ -1,11 +1,11 @@
 (uiop:define-package :ga/converter
     (:use :cl)
-  (:exports #:bin-str->float-number
-            #:float-number->bin-str
-            #:str->list
-            #:*x-min*
-            #:*x-max*
-            #:*digit-capacity*))
+  (:export #:bin-str->float-number
+           #:float-number->bin-str
+           #:str->list
+           #:*x-min*
+           #:*x-max*
+           #:*digit-capacity*))
 
 (in-package :ga/converter)
 
@@ -26,7 +26,7 @@
    (*
     (- float-number
        *x-min*)
-    (-1 (expt 2 *digit-capacity*)))
+    (1- (expt 2 *digit-capacity*)))
    (- *x-max* *x-min*)))
 
 (defun bin->num (bin)

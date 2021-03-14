@@ -1,11 +1,11 @@
 (uiop:define-package :ga/functions
     (:use :cl)
   (:nicknames :ga-functions)
-  (:exports #:rosenbrock-fn
-            #:rastrigin-fn
-            #:griewank-fn
-            #:ackley-fn
-            #:sphere-fn))
+  (:export #:rosenbrock-fn
+           #:rastrigin-fn
+           #:griewank-fn
+           #:ackley-fn
+           #:sphere-fn))
 
 (in-package :ga/functions)
 
