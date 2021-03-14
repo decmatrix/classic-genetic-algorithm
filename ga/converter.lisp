@@ -1,7 +1,8 @@
 (uiop:define-package :ga/converter
     (:use :cl)
-  (:export #:bin-str->float-number
-           #:float-number->bin-str
+  (:import-from :bit-smasher)
+  (:export #:bit-vector->float-number
+           #:float-number->bit-vector
            #:str->list
            #:*x-min*
            #:*x-max*
@@ -13,36 +14,63 @@
 (defvar *x-max*)
 (defvar *digit-capacity*)
 
-(defun bin-str->float-number (bin-str)
-  (let ((num (bin->num bin-str)))
-    (+
-     (* num
-        (/ (- *x-max* *x-min*)
-           (1- (expt 2 *digit-capacity*))))
-     *x-min*)))
+;; to exports
+(defun bit-vector->float-number (bit-vector)
+  (+
+   (* (bit-vector-to-integer bit-vector)
+      (/ (- *x-max* *x-min*)
+         (1- (expt 2 *digit-capacity*))))
+   *x-min*))
 
-(defun float-number->bin-str (float-number)
-  (/
-   (*
-    (- float-number
-       *x-min*)
-    (1- (expt 2 *digit-capacity*)))
-   (- *x-max* *x-min*)))
+(defun float-number->bit-vector (float-number)
+  (integer-to-bit-vector
+   (truncate
+    (/
+     (*
+      (- float-number
+         *x-min*)
+      (1- (expt 2 *digit-capacity*)))
+     (- *x-max* *x-min*)))))
 
-(defun bin->num (bin)
-  (parse-integer bin :radix 2))
+;; utils
+(defun bit-vector-to-integer (bit-vector)
+  (let ((first-bit (aref bit-vector 0))
+        (res (reduce
+              (lambda (a b)
+                (+ (ash a 1) b))
+              (subseq bit-vector 1))))
+    (if (eql first-bit 1)
+        (* -1 res)
+        res)))
 
-(defun num->bin (num)
-  (let ((res (write-to-string num :base 2)))
-    (concatenate 'string
-                 (repeat-chars->string
-                  (- *digit-capacity* (length res))
-                  #\0)
-                 res)))
+(defun integer-to-bit-vector (integer)
+  (labels ((%integer->bit-list (int &optional accum)
+             (cond ((> int 0)
+                    (multiple-value-bind (i r) (truncate int 2)
+                      (%integer->bit-list i (push r accum))))
+                   ((null accum)
+                    (push 0 accum))
+                   (t accum))))
+    (let ((res (coerce
+                (%integer->bit-list (if (< integer 0)
+                                        (* -1 integer)
+                                        integer))
+                'bit-vector)))
+      (concatenate 'bit-vector
+                   (make-front-bit-vector res (< integer 0))
+                   res))))
 
-(defun repeat-chars->string (n ch)
-  (coerce (loop :repeat n :collect ch) 'string))
+(defun make-front-bit-vector (bit-vector less-then-zero)
+  (concatenate
+   'bit-vector
+   (list
+    (if less-then-zero
+        1
+        0))
+   (repeat-number->bit-vector
+    (- (1- *digit-capacity*)
+       (length bit-vector))
+    0)))
 
-(defun str->list (str)
-  (loop :for i :from 0 :to (length str)
-     :collect (aref str i)))
+(defun repeat-number->bit-vector (n number)
+  (coerce (loop :repeat n :collect number) 'bit-vector))

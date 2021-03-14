@@ -11,7 +11,7 @@
 
 ;; SPHERE FUNCTION
 (defun sphere-fn (x-lst)
-  (loop :for i :to (length x-lst)
+  (loop :for i :from 0 :to (1- (length x-lst))
      :summing (expt (nth i x-lst)
                     2)))
 

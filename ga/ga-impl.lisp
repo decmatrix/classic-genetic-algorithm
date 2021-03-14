@@ -21,19 +21,19 @@
     :type list
     :reader get-genes)
    (phenotype
-    :type float
+    :initform nil
+    :type (or null float)
+    :accessor acc-phenotype
     :writer set-phenotype
     :reader get-phenotype)))
 
 ;; object printer
 (defmethod print-object ((obj chromosome) stream)
-  (with-slots (phenotype genes)
-      obj
-    (print-unreadable-object
-        (obj stream)
-      (format stream "chromosome: phenotype - ~A, genes - ~{~a~}"
-              phenotype
-              genes))))
+  (print-unreadable-object
+      (obj stream)
+    (format stream "chromosome: phenotype - ~a, genes - ~{~a~^,~}"
+            (get-phenotype obj)
+            (get-genes obj))))
 
 ;; generator
 (defun generate-chromosome ()
@@ -42,9 +42,10 @@
 
 (defun generate-genes ()
   (loop :repeat *count-of-genes*
-     :collect (float-number->bin-str
-               (random (abs (- *x-min*
-                               *x-max*))))))
+     :collect (float-number->bit-vector
+               (+ (random (abs (- *x-min*
+                                  *x-max*)))
+                  *x-max*))))
 
 (defun generate-population (count-of-pupulation)
   (loop :repeat count-of-pupulation
@@ -53,12 +54,12 @@
 ;; ga process (search extremum of function)
 (defun search-extremum-of-function (fn &key
                                          (count-of-elits 5)
-                                         (size-of-population 30)
+                                         (size-of-population 200)
                                          x-min
                                          x-max
                                          (digit-capacity 16)
                                          (count-of-genes 4)
-                                         (count-of-iterations 5))
+                                         (count-of-iterations 5000))
   (let* ((*count-of-elits* count-of-elits)
          (*count-of-tournament-chs* (- size-of-population
                                        *count-of-elits*))
@@ -66,19 +67,18 @@
          (*fn* fn)
          (*x-min* x-min)
          (*x-max* x-max)
-         (*digit-capacity* digit-capacity))
-    (sort-population
-     (loop :repeat count-of-iterations
-        :for new-population = (calculate-phenotypes
-                               (generate-population size-of-population))
-        :then (progn
-                (calculate-phenotypes new-population)
-                (sort-population new-population))
-        :do (setf new-population (selection-and-mutation new-population))
-        :finally (return
-                   (progn
-                     (calculate-phenotypes new-population)
-                     (car (sort-population new-population))))))))
+         (*digit-capacity* digit-capacity)
+         (init-population (generate-population size-of-population)))
+    (loop :repeat count-of-iterations
+       :for new-population = (calculate-phenotypes init-population)
+       :then (progn
+               (calculate-phenotypes new-population)
+               (sort-population new-population))
+       :do (setf new-population (selection-and-mutation new-population))
+       :finally (return
+                  (progn
+                    (calculate-phenotypes new-population)
+                    (car (sort-population new-population)))))))
 
 
 ;; population utils
@@ -87,10 +87,11 @@
    (lambda (ch)
      (set-phenotype
       (funcall *fn*
-               (mapcar #'bin-str->float-number
+               (mapcar #'bit-vector->float-number
                        (get-genes ch)))
       ch))
-   population))
+   population)
+  population)
 
 (defun sort-population (population)
   (sort population #'< :key #'get-phenotype))
@@ -117,19 +118,19 @@
                             genes-of-ch2))
          (res (mapcar
                (lambda (gen-of-ch1 gen-of-ch2)
-                 (if (or (equal gen-of-ch1 random-gen-1)
-                         (equal gen-of-ch2 random-gen-2))
-                     (let ((bit-str-1 (str->list gen-of-ch1))
-                           (bit-str-2 (str->list gen-of-ch2)))
+                 (if (or (equalp gen-of-ch1 random-gen-1)
+                         (equalp gen-of-ch2 random-gen-2))
+                     (let ((bit-str-1 (coerce gen-of-ch1 'list))
+                           (bit-str-2 (coerce gen-of-ch2 'list)))
                        (list
-                        (coerce 'string
-                                (append
+                        (coerce (append
                                  (subseq bit-str-2 0 2)
-                                 (subseq bit-str-1 3)))
-                        (coerce 'string
-                                (append
+                                 (subseq bit-str-1 3))
+                                'bit-vector)
+                        (coerce (append
                                  (subseq bit-str-1 0 2)
-                                 (subseq bit-str-2 3)))))
+                                 (subseq bit-str-2 3))
+                                'bit-vector)))
                      (list gen-of-ch2 gen-of-ch1)))
                genes-of-ch1
                genes-of-ch2)))
@@ -137,9 +138,10 @@
      (make-instance
       'chromosome
       :genes (mapcar #'first res))
-     (make-instance
-      'chromosome
-      :genes (mapcar #'second res)))))
+     ;; (make-instance
+     ;;  'chromosome
+     ;;  :genes (mapcar #'second res))
+     )))
 
 ;; selections and mutations
 (defun selection-and-mutation (population)
@@ -154,11 +156,11 @@
   (subseq population 0 *count-of-elits*))
 
 (defun tournament-selection (population)
-  (let ((population (subseq population *count-of-elits*)))
+  (let ((population (subseq population (1+ *count-of-elits*))))
     (loop :repeat *count-of-tournament-chs*
-       :collect (let ((ch1 (nth (random *count-of-tournament-chs*)
+       :collect (let ((ch1 (nth (random (length population))
                                 population))
-                      (ch2 (nth (random *count-of-tournament-chs*)
+                      (ch2 (nth (random (length population))
                                 population)))
                   (if (< (get-phenotype ch1)
                          (get-phenotype ch2))
@@ -167,11 +169,12 @@
 
 ;; mutation
 (defun mutation (population)
-  (dolist (ch population)
-    (make-instance
-     'chromosome
-     :genes (bits-mutation
-             (get-genes ch)))))
+  (loop :for i :from 0 :to (1- (length population))
+     :collect (make-instance
+               'chromosome
+               :genes (bits-mutation
+                       (get-genes
+                        (nth i population))))))
 
 (defun calculate-mutation-probability ()
   (*
@@ -179,17 +182,17 @@
       *digit-capacity*)
    100))
 
-(defun bits-mutation (bit-str)
+(defun bits-mutation (bit-vector-list)
   (let ((mutation-prob (calculate-mutation-probability)))
-    (coerce
-     'string
-     (mapcar
-      (lambda (bit)
-        (if (> mutation-prob (random 100))
-            (case bit
-              (#\- #\+)
-              (#\0 #\1)
-              (#\1 #\0)
-              (t (error "Unknown symbol: ~a" bit)))
-            bit))
-      (str->list bit-str)))))
+    (mapcar
+     (lambda (bit-vector)
+       (coerce
+        (loop :for bit :across bit-vector
+           :collect (if (> mutation-prob (random 100))
+                        (case bit
+                          (1 0)
+                          (0 1)
+                          (t (error "unknown number: ~a" bit)))
+                        bit))
+        'bit-vector))
+     bit-vector-list)))
