@@ -4,4 +4,6 @@
     :description "Classic genetic algorithm in Common Lisp"
     :version "0.1"
     :author "Sokolovskyi Bohdan"
-    :depends-on ("ga/ga-impl"))
+    :depends-on ("ga/ga-impl"
+                 "ga/functions"
+                 "ga/test"))
