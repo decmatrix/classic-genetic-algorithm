@@ -11,19 +11,23 @@
 
 ;; SPHERE FUNCTION
 (defun sphere-fn (x-lst)
-  (loop :for x :across x-lst
-     :summing (expt x 2)))
+  (loop :for i :to (length x-lst)
+     :summing (expt (nth i x-lst)
+                    2)))
 
 ;; ACKLEY FUNCTION
 (defun ackley-fn (x-lst)
   (+ (- (* -20
            (exp (* -0.2
                    (sqrt
-                    (/ (loop :for x :across x-lst
-                          :summing (expt x 2))
+                    (/ (loop :for i :to (length x-lst)
+                          :summing (expt (nth i x-lst)
+                                         2))
                        (length x-lst))))))
-        (exp (/ (loop :for x :across x-lst
-                   :summing (cos (* 2 pi x)))
+        (exp (/ (loop :for i :to (length x-lst)
+                   :summing (cos (* 2
+                                    pi
+                                    (nth i x-lst))))
                 (length x-lst))))
      20
      (exp 1)))
@@ -31,24 +35,28 @@
 ;; GRIEWANK FUNCTION
 (defun griewank-fn (x-lst)
   (1+
-   (- (/ (loop :for x :across x-lst
-            :summing (expt x 2))
+   (- (/ (loop :for i :to (length x-lst)
+            :summing (expt (nth i x-lst)
+                           2))
          4000)
-      (loop :for x :across x-lst
-         :and i = 1 :then (1+ i)
+      (loop :for i :to (length x-lst)
+         :and j = 1 :then (1+ j)
          :for res = 1
          :then (* res
-                  (cos (/ x (sqrt i))))
+                  (cos (/ (nth i x-lst) (sqrt j))))
          :finally (return res)))))
 
 ;; RASTRIGIN FUNCTION
 (defun rastrigin-fn (x-lst)
   (+ (* 10
         (length x-lst))
-     (loop :for x :across x-lst
-        :summing (- (expt x 2)
+     (loop :for i :to (length x-lst)
+        :summing (- (expt (nth i x-lst)
+                          2)
                     (* 10
-                       (cos (* 2 pi x)))))))
+                       (cos (* 2
+                               pi
+                               (nth i x-lst))))))))
 
 ;; ROSENBROCK FUNCTION
 (defun rosenbrock-fn (x-lst)
