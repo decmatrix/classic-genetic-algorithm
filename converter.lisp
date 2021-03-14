@@ -2,6 +2,7 @@
     (:use :cl)
   (:exports #:bin-str->float-number
             #:float-number->bin-str
+            #:str->list
             #:*x-min*
             #:*x-max*
             #:*digit-capacity*))
@@ -41,3 +42,7 @@
 
 (defun repeat-chars->string (n ch)
   (coerce (loop :repeat n :collect ch) 'string))
+
+(defun str->list (str)
+  (loop :for i :from 0 :to (length str)
+     :collect (aref str i)))

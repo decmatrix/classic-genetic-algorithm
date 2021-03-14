@@ -6,4 +6,6 @@
     :author "Sokolovskyi Bohdan"
     :depends-on ("ga/ga-impl"
                  "ga/functions"
-                 "ga/test"))
+                 "ga/test"
+                 "ga/converter"
+                 "alexandria"))
