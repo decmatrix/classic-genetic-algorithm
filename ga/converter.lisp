@@ -25,23 +25,21 @@
 (defun float-number->bit-vector (float-number)
   (integer-to-bit-vector
    (truncate
-    (/
-     (*
-      (- float-number
-         *x-min*)
-      (1- (expt 2 *digit-capacity*)))
-     (- *x-max* *x-min*)))))
+    (*
+     (- float-number
+        *x-min*)
+     (/
+      (1- (expt 2 *digit-capacity*))
+      (- *x-max* *x-min*))))))
 
 ;; utils
 (defun bit-vector-to-integer (bit-vector)
-  (let ((first-bit (aref bit-vector 0))
-        (res (reduce
-              (lambda (a b)
-                (+ (ash a 1) b))
-              (subseq bit-vector 1))))
-    (if (eql first-bit 1)
-        (* -1 res)
-        res)))
+  (unless (eql (length bit-vector) *digit-capacity*)
+    (error "wrong bit vector: ~a" bit-vector))
+  (reduce
+   (lambda (a b)
+     (+ (ash a 1) b))
+   bit-vector))
 
 (defun integer-to-bit-vector (integer)
   (labels ((%integer->bit-list (int &optional accum)
@@ -51,26 +49,24 @@
                    ((null accum)
                     (push 0 accum))
                    (t accum))))
-    (let ((res (coerce
-                (%integer->bit-list (if (< integer 0)
-                                        (* -1 integer)
-                                        integer))
-                'bit-vector)))
-      (concatenate 'bit-vector
-                   (make-front-bit-vector res (< integer 0))
-                   res))))
+    (let* ((res (coerce
+                 (%integer->bit-list (if (< integer 0)
+                                         (* -1 integer)
+                                         integer))
+                 'bit-vector))
+           (res-norm (make-front-bit-vector res)))
+      (unless (eql *digit-capacity* (length res-norm))
+        (error "wrong bit vector: ~a" res-norm))
+      res-norm)))
 
-(defun make-front-bit-vector (bit-vector less-then-zero)
+(defun make-front-bit-vector (bit-vector)
   (concatenate
    'bit-vector
-   (list
-    (if less-then-zero
-        1
-        0))
    (repeat-number->bit-vector
-    (- (1- *digit-capacity*)
+    (- *digit-capacity*
        (length bit-vector))
-    0)))
+    0)
+   bit-vector))
 
 (defun repeat-number->bit-vector (n number)
   (coerce (loop :repeat n :collect number) 'bit-vector))

@@ -1,12 +1,15 @@
 (uiop:define-package :ga/ga-impl
     (:use :cl
-          :ga/converter)
+          :ga/converter
+          :ga/utils)
   (:import-from :alexandria
                 #:flatten)
   (:nicknames :ga)
   (:export #:search-extremum-of-function))
 
 (in-package :ga/ga-impl)
+
+(declaim (optimize (safety 3)))
 
 ;; dynamic vars
 (defvar *count-of-genes*)
@@ -22,7 +25,7 @@
     :reader get-genes)
    (phenotype
     :initform nil
-    :type (or null float)
+    :type (or null number)
     :accessor acc-phenotype
     :writer set-phenotype
     :reader get-phenotype)))
@@ -43,9 +46,7 @@
 (defun generate-genes ()
   (loop :repeat *count-of-genes*
      :collect (float-number->bit-vector
-               (+ (random (abs (- *x-min*
-                                  *x-max*)))
-                  *x-max*))))
+               (random-from-range *x-min* *x-max*))))
 
 (defun generate-population (count-of-pupulation)
   (loop :repeat count-of-pupulation
@@ -57,9 +58,9 @@
                                          (size-of-population 200)
                                          x-min
                                          x-max
-                                         (digit-capacity 16)
-                                         (count-of-genes 2)
-                                         (count-of-iterations 10))
+                                         (digit-capacity 30)
+                                         (count-of-genes 10)
+                                         (count-of-iterations 10000))
   (let* ((*count-of-elits* count-of-elits)
          (*count-of-tournament-chs* (- size-of-population
                                        *count-of-elits*))
@@ -120,22 +121,26 @@
      'chromosome
      :genes (mapcar
              (lambda (gen-of-ch1 gen-of-ch2)
-               (if (or (equalp gen-of-ch1 random-gen-1)
-                       (equalp gen-of-ch2 random-gen-2))
-                   (let ((bit-str-1 (coerce gen-of-ch1 'list))
-                         (bit-str-2 (coerce gen-of-ch2 'list)))
-                     (if (eql 1 (random 2))
-                         (coerce (append
-                                  (subseq bit-str-2 0 2)
-                                  (subseq bit-str-1 3))
-                                 'bit-vector)
-                         (coerce (append
-                                  (subseq bit-str-1 0 2)
-                                  (subseq bit-str-2 3))
-                                 'bit-vector)))
-                   (if (eql 1 (random 2))
-                       gen-of-ch2
-                       gen-of-ch1)))
+               (let ((res
+                      (if (or (equalp gen-of-ch1 random-gen-1)
+                              (equalp gen-of-ch2 random-gen-2))
+                          (let ((bit-str-1 (coerce gen-of-ch1 'list))
+                                (bit-str-2 (coerce gen-of-ch2 'list)))
+                            (if (eql 1 (random 2))
+                                (coerce (append
+                                         (subseq bit-str-2 0 2)
+                                         (subseq bit-str-1 2))
+                                        'bit-vector)
+                                (coerce (append
+                                         (subseq bit-str-1 0 2)
+                                         (subseq bit-str-2 2))
+                                        'bit-vector)))
+                          (if (eql 1 (random 2))
+                              gen-of-ch2
+                              gen-of-ch1))))
+                 (unless (eql (length res) *digit-capacity*)
+                   (error "Wrong bit vector: ~a" res))
+                 res))
              genes-of-ch1
              genes-of-ch2))))
 
@@ -152,7 +157,7 @@
   (subseq population 0 *count-of-elits*))
 
 (defun tournament-selection (population)
-  (let ((population (subseq population (1+ *count-of-elits*))))
+  (let ((population (subseq population *count-of-elits*)))
     (loop :repeat *count-of-tournament-chs*
        :collect (let ((ch1 (nth (random (length population))
                                 population))
