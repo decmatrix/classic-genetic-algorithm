@@ -54,13 +54,13 @@
 
 ;; ga process (search extremum of function)
 (defun search-extremum-of-function (fn &key
-                                         (count-of-elits 5)
+                                         (count-of-elits 20)
                                          (size-of-population 200)
                                          x-min
                                          x-max
                                          (digit-capacity 30)
-                                         (count-of-genes 10)
-                                         (count-of-iterations 10000))
+                                         (count-of-genes 3)
+                                         (count-of-iterations 5000))
   (let* ((*count-of-elits* count-of-elits)
          (*count-of-tournament-chs* (- size-of-population
                                        *count-of-elits*))
