@@ -26,7 +26,6 @@
    (phenotype
     :initform nil
     :type (or null number)
-    :accessor acc-phenotype
     :writer set-phenotype
     :reader get-phenotype)))
 
