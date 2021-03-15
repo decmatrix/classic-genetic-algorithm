@@ -7,5 +7,4 @@
     :depends-on ("ga/ga-impl"
                  "ga/functions"
                  "ga/test"
-                 "ga/converter"
-                 "alexandria"))
+                 "ga/converter"))

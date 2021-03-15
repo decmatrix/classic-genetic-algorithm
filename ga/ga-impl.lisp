@@ -2,8 +2,6 @@
     (:use :cl
           :ga/converter
           :ga/utils)
-  (:import-from :alexandria
-                #:flatten)
   (:nicknames :ga)
   (:export #:search-extremum-of-function))
 
@@ -24,6 +22,7 @@
     :type list
     :reader get-genes)
    (phenotype
+    :initarg :phenotype
     :initform nil
     :type (or null number)
     :writer set-phenotype
@@ -53,12 +52,12 @@
 
 ;; ga process (search extremum of function)
 (defun search-extremum-of-function (fn &key
-                                         (count-of-elits 20)
-                                         (size-of-population 200)
+                                         (count-of-elits 5)
+                                         (size-of-population 500)
                                          x-min
                                          x-max
-                                         (digit-capacity 30)
-                                         (count-of-genes 3)
+                                         (digit-capacity 16)
+                                         (count-of-genes 10)
                                          (count-of-iterations 5000))
   (let* ((*count-of-elits* count-of-elits)
          (*count-of-tournament-chs* (- size-of-population
@@ -101,47 +100,55 @@
 
 ;; crosovver operation
 (defun two-point-crossover (population)
-  (flatten
-   (loop :repeat *count-of-tournament-chs*
-      :collect (crossover-swap
-                (get-genes
-                 (nth (random *count-of-tournament-chs*)
-                      population))
-                (get-genes
-                 (nth (random *count-of-tournament-chs*)
-                      population))))))
+  (loop :repeat *count-of-tournament-chs*
+     :do (let* ((i1 (random *count-of-tournament-chs*))
+                (i2 (random *count-of-tournament-chs*))
+                (res (crossover-sawp
+                      (get-genes
+                       (nth i1 population))
+                      (get-genes
+                       (nth i2 population)))))
+           (setf (nth i1 population) (car res))
+           (setf (nth i2 population) (cdr res))))
+  population)
 
-(defun crossover-swap (genes-of-ch1 genes-of-ch2)
-  (let* ((random-gen-1 (nth (random (length genes-of-ch1))
-                            genes-of-ch1))
-         (random-gen-2 (nth (random (length genes-of-ch2))
-                            genes-of-ch2)))
-    (make-instance
-     'chromosome
-     :genes (mapcar
-             (lambda (gen-of-ch1 gen-of-ch2)
-               (let ((res
-                      (if (or (equalp gen-of-ch1 random-gen-1)
-                              (equalp gen-of-ch2 random-gen-2))
-                          (let ((bit-str-1 (coerce gen-of-ch1 'list))
-                                (bit-str-2 (coerce gen-of-ch2 'list)))
-                            (if (eql 1 (random 2))
-                                (coerce (append
-                                         (subseq bit-str-2 0 2)
-                                         (subseq bit-str-1 2))
-                                        'bit-vector)
-                                (coerce (append
-                                         (subseq bit-str-1 0 2)
-                                         (subseq bit-str-2 2))
-                                        'bit-vector)))
-                          (if (eql 1 (random 2))
-                              gen-of-ch2
-                              gen-of-ch1))))
-                 (unless (eql (length res) *digit-capacity*)
-                   (error "Wrong bit vector: ~a" res))
-                 res))
-             genes-of-ch1
-             genes-of-ch2))))
+(defun crossover-sawp (genes-of-ch1 genes-of-ch2)
+  (let* ((single-gen-1
+          (concatenate-bit-vector-list genes-of-ch1))
+         (single-gen-2
+          (concatenate-bit-vector-list genes-of-ch2))
+         (p1 (random (length single-gen-1)))
+         (p2 (random-from-range (1+ p1) (length single-gen-1)))
+         (new-single-gen-1 (concatenate-bit-vector-list
+                            `(,(subseq single-gen-1 0 p1)
+                               ,(subseq single-gen-2 p1 p2)
+                               ,(subseq single-gen-1 p2))))
+         (new-single-gen-2 (concatenate-bit-vector-list
+                            `(,(subseq single-gen-2 0 p1)
+                               ,(subseq single-gen-1 p1 p2)
+                               ,(subseq single-gen-2 p2))))
+         (new-genes-of-ch1 (split-bit-vector new-single-gen-1))
+         (new-genes-of-ch2 (split-bit-vector new-single-gen-2)))
+    (cons
+     (make-instance
+      'chromosome
+      :genes new-genes-of-ch1)
+     (make-instance
+      'chromosome
+      :genes new-genes-of-ch2))))
+
+(defun concatenate-bit-vector-list (bit-vector-lst)
+  (reduce
+   (lambda (acc val)
+     (concatenate 'bit-vector acc val))
+   bit-vector-lst))
+
+(defun split-bit-vector (bit-vector)
+  (loop :for i :from *digit-capacity* :to (length bit-vector) :by *digit-capacity*
+     :with j = 0
+     :collect (prog1
+                  (subseq bit-vector j i)
+                (setf j i))))
 
 ;; selections and mutations
 (defun selection-and-mutation (population)
@@ -162,7 +169,7 @@
                                 population))
                       (ch2 (nth (random (length population))
                                 population)))
-                  (if (< (get-phenotype ch1)
+                  (if (<= (get-phenotype ch1)
                          (get-phenotype ch2))
                       ch1
                       ch2)))))
@@ -178,8 +185,9 @@
 
 (defun calculate-mutation-probability ()
   (*
-   (/ 1
-      *digit-capacity*)
+   (+ 10
+      (/ 1
+         *digit-capacity*))
    100))
 
 (defun bits-mutation (bit-vector-list)

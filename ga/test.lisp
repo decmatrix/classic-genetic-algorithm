@@ -3,7 +3,7 @@
           :ga/ga-impl
           :ga/functions)
   (:nicknames :ga-test)
-  (:export #:run-all
+  (:export #:test-all
            #:test-sphere-fn
            #:test-ackly-fn
            #:test-griewank-fn
@@ -12,7 +12,7 @@
 
 (in-package :ga/test)
 
-(defun run-all ()
+(defun test-all ()
   (format t "Sphere fn: ~a~%"
           (test-sphere-fn))
   (format t "Ackly fn: ~a~%"
@@ -25,31 +25,31 @@
           (test-rosenbrock-fn)))
 
 (defun test-sphere-fn ()
-  (search-extremum-of-function
-   #'sphere-fn
-   :x-min -100.0
-   :x-max +100.0))
+  (time (search-extremum-of-function
+         #'sphere-fn
+         :x-min -100.0
+         :x-max +100.0)))
 
 (defun test-ackly-fn ()
-  (search-extremum-of-function
-   #'ackley-fn
-   :x-min -32.768
-   :x-max +32.768))
+  (time (search-extremum-of-function
+         #'ackley-fn
+         :x-min -32.768
+         :x-max +32.768)))
 
 (defun test-griewank-fn ()
-  (search-extremum-of-function
-   #'griewank-fn
-   :x-min -600.0
-   :x-max 600.0))
+  (time (search-extremum-of-function
+         #'griewank-fn
+         :x-min -600.0
+         :x-max 600.0)))
 
 (defun test-rastrigin-fn ()
-  (search-extremum-of-function
-   #'rastrigin-fn
-   :x-min -5.12
-   :x-max 5.12))
+  (time (search-extremum-of-function
+         #'rastrigin-fn
+         :x-min -5.12
+         :x-max 5.12)))
 
 (defun test-rosenbrock-fn ()
-  (search-extremum-of-function
-   #'rosenbrock-fn
-   :x-min -5.0
-   :x-max 10.0))
+  (time (search-extremum-of-function
+         #'rosenbrock-fn
+         :x-min -5.0
+         :x-max 10.0)))
